@@ -55,42 +55,37 @@ body, #root {
 /* Custom Loader */
 /* HTML: <div class="loader"></div> */
 .loader {
-  width: 90px;
-  height: 14px;
-  box-shadow: 0 3px 0 #afafaf;
-  position: relative;
-  display: grid;
-  clip-path: inset(-60px 0 -5px);
-}
-.loader:after {
-  content: "";
-  position: absolute;
-  background: repeating-linear-gradient(
-    90deg,
-    #0000 0 calc(50% - 8px),
-    #ccc 0 calc(50% + 8px),
-    #0000 0 100%
-  ) 0 0/calc(100%/3) 100%;
-  animation: l6-1 1s infinite;
-}
-.loader:before {
-  content: "";
-  position: absolute;
-  width: 14px;
+  height: 60px;
   aspect-ratio: 1;
-  left: calc(50% - 7px);
-  bottom: 0;
+  position: relative;
+}
+.loader::before,
+.loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  background: lightblue;
-  animation: l6-2 1s infinite;
+  transform-origin: bottom;
 }
-@keyframes l6-1 {
-  50%, 100% {
-    background-position: calc(100% / 2) 0;
-  }
+.loader::after {
+  background:
+    radial-gradient(at 75% 15%,rgba(214, 214, 214, 0.733),#0000 35%),
+    radial-gradient(at 80% 40%,#0000,#0008),
+    radial-gradient(circle  5px,#d6d6d6 94%,#0000),
+    radial-gradient(circle 10px,#000 94%,#0000),
+    linear-gradient(#F93318 0 0) top   /100% calc(50% - 5px),
+    linear-gradient(#cdcdcd    0 0) bottom/100% calc(50% - 5px)
+    #000;
+  background-repeat: no-repeat;
+  animation: l20 1s infinite cubic-bezier(0.5,120,0.5,-120);
 }
-@keyframes l6-2 {
-  0%, 50% {
-    transform: translateY(-80px);
-  }
+.loader::before {
+  background:#b1d5f0;
+  filter: blur(8px);
+  transform: scaleY(0.4) translate(-13px, 0px);
+}
+@keyframes l20 { 
+ 30%,70% {transform:rotate(0deg)}
+ 49.99%  {transform:rotate(0.2deg)}
+ 50%     {transform:rotate(-0.2deg)}
 }
