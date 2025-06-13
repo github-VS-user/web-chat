@@ -45,6 +45,7 @@ app.get('/', (req, res) => {
 
 const usersPerRoom = new Map();
 const connectedSockets = new Set();
+const kickedUsers = new Set();
 
 io.on('connection', (socket) => {
   console.log(`User connected: socket id = ${socket.id}`);
@@ -73,12 +74,6 @@ io.on('connection', (socket) => {
     });
   };
 
-  // Send chat history for general room as before
-  Message.find({ room: 'general' }).sort({ timestamp: -1 }).limit(50)
-    .then(messages => {
-      console.log(`Sending chat history to socket ${socket.id} for room "general" with ${messages.length} messages`);
-      socket.emit('chat history', messages.reverse());
-    }).catch(err => console.error('Failed to fetch message history:', err));
 
   // Update counts for initial rooms
   updateUsersCountForRooms();
@@ -94,6 +89,12 @@ io.on('connection', (socket) => {
     if (!rooms.has(room)) {
       console.log(`Room "${room}" does not exist`);
       socket.emit('error message', `Room "${room}" does not exist.`);
+      return;
+    }
+
+    if (kickedUsers.has(username)) {
+      console.log(`User "${username}" is kicked and cannot join room "${room}".`);
+      socket.emit('kicked');
       return;
     }
 
@@ -138,6 +139,12 @@ io.on('connection', (socket) => {
       return;
     }
 
+    if (kickedUsers.has(username)) {
+      console.log(`User "${username}" is kicked and cannot join room "${room}".`);
+      socket.emit('kicked');
+      return;
+    }
+
     // Leave all rooms except private room
     Array.from(socket.rooms).forEach(r => {
       if (r !== socket.id) {
@@ -156,6 +163,46 @@ io.on('connection', (socket) => {
 
     io.to(room).emit('user joined', username);
     socket.emit('room created', room);
+  });
+  // Admin/command events
+  socket.on('command', ({ command, room, username }) => {
+    if (!room || !rooms.has(room)) return;
+
+    if (command === '/clear') {
+      if (room === 'general') {
+        io.to(room).emit('clear messages');
+        console.log(`Cleared messages in general room (frontend-only).`);
+      } else {
+        Message.deleteMany({ room })
+          .then(() => {
+            io.to(room).emit('clear messages');
+            console.log(`Cleared messages in MongoDB for room "${room}".`);
+          })
+          .catch(err => console.error('Failed to clear messages:', err));
+      }
+    }
+
+    if (command.startsWith('/kick ')) {
+      const target = command.split(' ')[1];
+      if (target) {
+        kickedUsers.add(target);
+        for (const [id, s] of io.of('/').sockets) {
+          if (s.data?.username === target) {
+            s.emit('kicked');
+            s.leave(room);
+            console.log(`User "${target}" was kicked from room "${room}".`);
+          }
+        }
+      }
+    }
+
+    if (command.startsWith('/unkick ')) {
+      const target = command.split(' ')[1];
+      if (target && kickedUsers.has(target)) {
+        kickedUsers.delete(target);
+        console.log(`User "${target}" was un-kicked.`);
+      }
+    }
   });
 
   socket.on('chat message', (msg) => {

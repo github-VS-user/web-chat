@@ -17,6 +17,8 @@ function App() {
   const [roomMode, setRoomMode] = useState('');
   const [roomInput, setRoomInput] = useState('');
   const [roomError, setRoomError] = useState('');
+  // New kicked state
+  const [kicked, setKicked] = useState(false);
 
   const isValidRoomName = (name) => /^[a-zA-Z0-9]{3,8}$/.test(name);
 
@@ -134,6 +136,16 @@ function App() {
       setRoomError(msg);
     });
 
+    // Listen for 'kicked' event
+    socket.on('kicked', () => {
+      setKicked(true);
+    });
+
+    // Listen for 'clear messages' event
+    socket.on('clear messages', () => {
+      setMessages([]);
+    });
+
     return () => {
       socket.off('chat message');
       socket.off('chat history');
@@ -145,6 +157,8 @@ function App() {
       socket.off('room created');
       socket.off('joined room');
       socket.off('error message');
+      socket.off('kicked');
+      socket.off('clear messages');
     };
   }, [room]);
 
@@ -164,15 +178,24 @@ function App() {
     }
   }, [username, room]);
 
-  // Handle sending message and showing own message immediately
+  // Handle sending message and showing own message immediately, with command support
   const handleSend = () => {
     if (message.trim() === '') return;
-    const msgData = {
-      id: uuidv4(),
-      user: username,
-      text: message,
-    };
-    socket.emit('chat message', { ...msgData, room });
+
+    if (message.startsWith('/')) {
+      socket.emit('command', {
+        command: message,
+        room,
+        username,
+      });
+    } else {
+      const msgData = {
+        id: uuidv4(),
+        user: username,
+        text: message,
+      };
+      socket.emit('chat message', { ...msgData, room });
+    }
     setMessage('');
   };
 
@@ -185,6 +208,14 @@ function App() {
       socket.emit('user stop typing');
     }, 1000);
   };
+
+  if (kicked) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-red-100 text-red-700 text-xl font-semibold">
+        You have been kicked from this chat.
+      </div>
+    );
+  }
 
   if (wakingUp) {
     return (
