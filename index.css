@@ -80,7 +80,7 @@ body, #root {
   animation: l20 1s infinite cubic-bezier(0.5,120,0.5,-120);
 }
 .loader::before {
-  background:#b1d5f0;
+  background:#aeaeae;
   filter: blur(8px);
   transform: scaleY(0.4) translate(-13px, 0px);
 }
