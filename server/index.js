@@ -14,6 +14,7 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 const messageSchema = new mongoose.Schema({
+  _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
   room: String,
   user: String,
   text: String,
@@ -41,28 +42,46 @@ app.get('/', (req, res) => {
   res.send('Server is awake!');
 });
 
+
 const usersPerRoom = new Map();
+const connectedSockets = new Set();
 
 io.on('connection', (socket) => {
   console.log(`User connected: socket id = ${socket.id}`);
+
+  // Track this socket as connected
+  connectedSockets.add(socket.id);
 
   socket.onAny((event, ...args) => {
     console.log(`Received event: "${event}" with args:`, args);
   });
 
+  // Join general room by default
   socket.join('general');
   console.log(`Socket ${socket.id} joined room "general"`);
 
+  // Helper to update user counts for all rooms this socket is in
+  const updateUsersCountForRooms = () => {
+    socket.rooms.forEach(room => {
+      if (room === socket.id) return; // skip socket's private room
+      // Count how many connected sockets are in this room
+      const clients = io.sockets.adapter.rooms.get(room);
+      const count = clients ? clients.size : 0;
+      usersPerRoom.set(room, count);
+      io.to(room).emit('online users', count);
+      console.log(`Online users in "${room}" updated to ${count}`);
+    });
+  };
+
+  // Send chat history for general room as before
   Message.find({ room: 'general' }).sort({ timestamp: -1 }).limit(50)
     .then(messages => {
       console.log(`Sending chat history to socket ${socket.id} for room "general" with ${messages.length} messages`);
       socket.emit('chat history', messages.reverse());
     }).catch(err => console.error('Failed to fetch message history:', err));
 
-  const count = (usersPerRoom.get('general') || 0) + 1;
-  usersPerRoom.set('general', count);
-  io.to('general').emit('online users', count);
-  console.log(`Online users in "general" updated to ${count}`);
+  // Update counts for initial rooms
+  updateUsersCountForRooms();
 
   socket.on('test-event', (data) => {
     console.log(`Received test-event from ${socket.id} with data:`, data);
@@ -78,31 +97,30 @@ io.on('connection', (socket) => {
       return;
     }
 
-    Array.from(socket.rooms).forEach(r => {
-      if (r !== socket.id && r !== room) {
-        socket.leave(r);
-        const users = usersPerRoom.get(r) || 1;
-        usersPerRoom.set(r, users - 1);
-        io.to(r).emit('online users', usersPerRoom.get(r));
-        io.to(r).emit('user left', username);
-        console.log(`User ${username} left room "${r}"`);
-      }
-    });
+    socket.data.username = username;
 
     socket.join(room);
     console.log(`User ${username} joined room "${room}"`);
 
-    Message.find({ room }).sort({ timestamp: -1 }).limit(50).then(messages => {
-      console.log(`Sending chat history to socket ${socket.id} for room "${room}" with ${messages.length} messages`);
-      socket.emit('chat history', messages.reverse());
-    }).catch(err => console.error('Failed to fetch message history:', err));
+    // Leave previous rooms except private socket room and new room
+    const previousRooms = Array.from(socket.rooms).filter(r => r !== socket.id && r !== room);
+    previousRooms.forEach(r => {
+      socket.leave(r);
+      io.to(r).emit('user left', username);
+      console.log(`User ${username} left room "${r}"`);
+    });
 
-    const count = (usersPerRoom.get(room) || 0) + 1;
-    usersPerRoom.set(room, count);
+    socket.emit('joined room', room);
 
-    io.to(room).emit('online users', count);
+    Message.find({ room }).sort({ timestamp: -1 }).limit(50)
+      .then(messages => {
+        console.log(`Sending chat history to socket ${socket.id} for room "${room}" with ${messages.length} messages`);
+        socket.emit('chat history', messages.reverse());
+      }).catch(err => console.error('Failed to fetch message history:', err));
+
+    updateUsersCountForRooms();
+
     io.to(room).emit('user joined', username);
-    console.log(`Online users in "${room}" updated to ${count}`);
   });
 
   socket.on('create room', ({ username, room }) => {
@@ -120,6 +138,7 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Leave all rooms except private room
     Array.from(socket.rooms).forEach(r => {
       if (r !== socket.id) {
         console.log(`[CREATE ROOM] User "${username}" leaving room "${r}"`);
@@ -129,15 +148,14 @@ io.on('connection', (socket) => {
 
     rooms.add(room);
     socket.join(room);
+    socket.emit('joined room', room);
+    socket.data.username = username;
     console.log(`[CREATE ROOM] User "${username}" joined new room "${room}"`);
 
-    const count = (usersPerRoom.get(room) || 0) + 1;
-    usersPerRoom.set(room, count);
+    updateUsersCountForRooms();
 
-    io.to(room).emit('online users', count);
     io.to(room).emit('user joined', username);
     socket.emit('room created', room);
-    console.log(`[CREATE ROOM] Room "${room}" creation complete and notification sent`);
   });
 
   socket.on('chat message', (msg) => {
@@ -148,23 +166,34 @@ io.on('connection', (socket) => {
     console.log(`Received chat message in room "${msg.room}" from user "${msg.user}": ${msg.text}`);
 
     const { room, user, text } = msg;
-    const messageDoc = new Message({ room, user, text });
-    messageDoc.save()
-      .then(() => console.log('Message saved to MongoDB'))
-      .catch(err => console.error('Failed to save message:', err));
+
+    if (room === 'general') {
+      console.log('Skipping saving message from general room.');
+    } else {
+      const messageDoc = new Message({ room, user, text });
+      messageDoc.save()
+        .then(() => console.log('Message saved to MongoDB'))
+        .catch(err => console.error('Failed to save message:', err));
+    }
 
     io.to(msg.room).emit('chat message', msg);
   });
 
   socket.on('disconnect', () => {
     console.log(`User disconnected: socket id = ${socket.id}`);
+
+    // Remove from connected sockets
+    connectedSockets.delete(socket.id);
+
+    updateUsersCountForRooms();
+
+    // You may need to track username in socket.data.username on join
+    const username = socket.data?.username || 'A user';
+
     socket.rooms.forEach(r => {
       if (r !== socket.id) {
-        const users = usersPerRoom.get(r) || 1;
-        usersPerRoom.set(r, users - 1);
-        io.to(r).emit('online users', usersPerRoom.get(r));
-        io.to(r).emit('user left', 'A user');
-        console.log(`User left room "${r}" due to disconnect`);
+        io.to(r).emit('user left', username);
+        console.log(`User ${username} left room "${r}" due to disconnect`);
       }
     });
   });

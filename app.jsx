@@ -69,16 +69,28 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    setMessages([]); // Clear old messages immediately when switching rooms
+  }, [room]);
+
   // Register socket event listeners once
   useEffect(() => {
     socket.on('chat message', (msg) => {
       if (msg.room === room) {
         setMessages(prev => [...prev, msg]);
-        setTimeout(() => {
-          setMessages(prev => prev.filter(m => m.id !== msg.id));
-        }, 10000);
+        if (room === 'general') {
+          setTimeout(() => {
+            setMessages(prev => prev.filter(m => m.id !== msg.id));
+          }, 10000);
+        }
         const chatEnd = document.getElementById('chat-end');
         if (chatEnd) chatEnd.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    socket.on('chat history', (history) => {
+      if (history.length > 0 && history[0].room === room) {
+        setMessages(history);
       }
     });
 
@@ -109,6 +121,14 @@ function App() {
       setRoomError('');
     });
 
+    // Add joined room listener
+    socket.on('joined room', (roomName) => {
+      console.log('[joined room] joined room:', roomName);
+      setRoom(roomName);
+      setShowRoomModal(false);
+      setRoomError('');
+    });
+
     socket.on('error message', (msg) => {
       console.log('[error message]', msg);
       setRoomError(msg);
@@ -116,12 +136,14 @@ function App() {
 
     return () => {
       socket.off('chat message');
+      socket.off('chat history');
       socket.off('user typing');
       socket.off('user stop typing');
       socket.off('user joined');
       socket.off('user left');
       socket.off('online users');
       socket.off('room created');
+      socket.off('joined room');
       socket.off('error message');
     };
   }, [room]);
@@ -202,7 +224,12 @@ function App() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      <header className="bg-blue-600 text-white p-4 text-xl">Web Chat</header>
+      <header className="bg-blue-600 text-white p-4 flex items-center justify-between text-xl">
+        <div>Web Chat</div>
+        <div className="bg-blue-800 px-3 py-1 rounded text-sm select-none">
+          Room: <span className="font-semibold">{room}</span>
+        </div>
+      </header>
 
       <div className="px-4 mt-2">
         <button
