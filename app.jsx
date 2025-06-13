@@ -225,9 +225,17 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       <header className="bg-blue-600 text-white p-4 flex items-center justify-between text-xl">
-        <div>Web Chat</div>
-        <div className="bg-blue-800 px-3 py-1 rounded text-sm select-none">
+        <div className="flex-1">Web Chat</div>
+
+        <div className="flex-1 text-center bg-blue-800 px-3 py-1 rounded text-sm select-none">
           Room: <span className="font-semibold">{room}</span>
+        </div>
+
+        <div className="flex-1 flex justify-end">
+          <div className="bg-white rounded-full px-3 py-1 flex items-center space-x-2 shadow-lg text-gray-800 text-sm font-medium">
+            <span className="w-3 h-3 bg-green-500 rounded-full animate-ping-slow"></span>
+            <span>{onlineCount} online</span>
+          </div>
         </div>
       </header>
 
