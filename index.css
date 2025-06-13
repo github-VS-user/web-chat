@@ -57,7 +57,7 @@ body, #root {
 .loader {
   width: 90px;
   height: 14px;
-  box-shadow: 0 3px 0 #fff;
+  box-shadow: 0 3px 0 #afafaf;
   position: relative;
   display: grid;
   clip-path: inset(-60px 0 -5px);
