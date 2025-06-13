@@ -147,7 +147,8 @@ io.on('connection', (socket) => {
     }
     console.log(`Received chat message in room "${msg.room}" from user "${msg.user}": ${msg.text}`);
 
-    const messageDoc = new Message(msg);
+    const { room, user, text } = msg;
+    const messageDoc = new Message({ room, user, text });
     messageDoc.save()
       .then(() => console.log('Message saved to MongoDB'))
       .catch(err => console.error('Failed to save message:', err));
