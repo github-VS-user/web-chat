@@ -42,11 +42,11 @@ function App() {
     });
   }, []);
 
-  // Restore username from localStorage on mount
+  // Restore username from localStorage on mount, always lowercase
   useEffect(() => {
     const savedName = localStorage.getItem('username');
     if (savedName) {
-      setUsername(savedName);
+      setUsername(savedName.toLowerCase());
       setConnected(true);
     }
   }, []);
@@ -211,8 +211,12 @@ function App() {
 
   if (kicked) {
     return (
-      <div className="h-screen flex items-center justify-center bg-red-100 text-red-700 text-xl font-semibold">
-        You have been kicked from this chat.
+      <div className="h-screen flex items-center justify-center bg-red-50 text-red-700 text-xl font-semibold border-4 border-red-500">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">🚫</div>
+          <p>You have been kicked from this chat room.</p>
+          <p>Please contact the admin or refresh later.</p>
+        </div>
       </div>
     );
   }
@@ -234,14 +238,14 @@ function App() {
           <input
             type="text"
             className="border p-2 w-full mb-4"
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => setUsername(e.target.value.toLowerCase())}
             value={username}
             aria-label="Enter username"
           />
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded"
             onClick={() => {
-              localStorage.setItem('username', username);
+              localStorage.setItem('username', username.toLowerCase());
               setConnected(true);
             }}
             disabled={!username.trim()}

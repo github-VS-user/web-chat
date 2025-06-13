@@ -84,6 +84,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join room', ({ username, room }) => {
+    username = username.toLowerCase();
     console.log(`User ${username} requested to join room "${room}"`);
 
     if (!rooms.has(room)) {
@@ -125,6 +126,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('create room', ({ username, room }) => {
+    username = username.toLowerCase();
     console.log(`[CREATE ROOM] User "${username}" requested to create room "${room}"`);
 
     if (!/^[a-zA-Z0-9]{3,8}$/.test(room)) {
@@ -166,6 +168,7 @@ io.on('connection', (socket) => {
   });
   // Admin/command events
   socket.on('command', ({ command, room, username }) => {
+    username = username.toLowerCase();
     if (!room || !rooms.has(room)) return;
 
     if (command === '/clear') {
@@ -183,11 +186,11 @@ io.on('connection', (socket) => {
     }
 
     if (command.startsWith('/kick ')) {
-      const target = command.split(' ')[1];
+      const target = command.split(' ')[1]?.toLowerCase();
       if (target) {
         kickedUsers.add(target);
         for (const [id, s] of io.of('/').sockets) {
-          if (s.data?.username === target) {
+          if ((s.data?.username || '').toLowerCase() === target) {
             s.emit('kicked');
             s.leave(room);
             console.log(`User "${target}" was kicked from room "${room}".`);
@@ -197,7 +200,7 @@ io.on('connection', (socket) => {
     }
 
     if (command.startsWith('/unkick ')) {
-      const target = command.split(' ')[1];
+      const target = command.split(' ')[1]?.toLowerCase();
       if (target && kickedUsers.has(target)) {
         kickedUsers.delete(target);
         console.log(`User "${target}" was un-kicked.`);
@@ -210,9 +213,9 @@ io.on('connection', (socket) => {
       console.log(`Ignoring chat message for invalid room: ${msg.room}`);
       return;
     }
-    console.log(`Received chat message in room "${msg.room}" from user "${msg.user}": ${msg.text}`);
-
-    const { room, user, text } = msg;
+    const { room, text } = msg;
+    const user = msg.user.toLowerCase();
+    console.log(`Received chat message in room "${room}" from user "${user}": ${text}`);
 
     if (room === 'general') {
       console.log('Skipping saving message from general room.');
@@ -223,7 +226,7 @@ io.on('connection', (socket) => {
         .catch(err => console.error('Failed to save message:', err));
     }
 
-    io.to(msg.room).emit('chat message', msg);
+    io.to(room).emit('chat message', { room, user, text });
   });
 
   socket.on('disconnect', () => {
@@ -235,7 +238,7 @@ io.on('connection', (socket) => {
     updateUsersCountForRooms();
 
     // You may need to track username in socket.data.username on join
-    const username = socket.data?.username || 'A user';
+    const username = (socket.data?.username || 'A user').toLowerCase();
 
     socket.rooms.forEach(r => {
       if (r !== socket.id) {
