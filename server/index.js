@@ -55,7 +55,7 @@ const io = new Server(server, {
 app.use(cors());
 
 const webdavClient = createClient(
-  "https://webdav.icedrive.io/",
+  `https://webdav.icedrive.io/remote.php/dav/files/${process.env.ICEDRIVE_EMAIL}/`,
   {
     username: process.env.ICEDRIVE_EMAIL,
     password: process.env.ICEDRIVE_KEY,
