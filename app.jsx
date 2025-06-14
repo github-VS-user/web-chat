@@ -116,7 +116,8 @@ function App() {
     });
 
     socket.on('online users', (userList) => {
-      setOnlineUsers(userList); // expects an array of usernames
+      console.log('Received online users:', userList);
+      setOnlineUsers(userList);
     });
 
     socket.on('room created', (roomName) => {
@@ -230,6 +231,8 @@ function App() {
       socket.emit('user stop typing');
     }, 1000);
   };
+
+  console.log('Online users count at render:', onlineUsers.length);
 
   if (kicked) {
     return (
