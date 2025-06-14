@@ -87,7 +87,22 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const remotePath = path.posix.join('rooms', room, `${Date.now()}_${file.originalname}`);
+    // Check/create "rooms" root folder
+    const roomsRootExists = await webdavClient.exists('rooms');
+    if (!roomsRootExists) {
+      await webdavClient.createDirectory('rooms');
+      console.log('Created "rooms" directory on WebDAV');
+    }
+
+    // Check/create room-specific folder
+    const roomFolder = `rooms/${room}`;
+    const roomExists = await webdavClient.exists(roomFolder);
+    if (!roomExists) {
+      await webdavClient.createDirectory(roomFolder);
+      console.log(`Created "${roomFolder}" directory on WebDAV`);
+    }
+
+    const remotePath = path.posix.join(roomFolder, `${Date.now()}_${file.originalname}`);
 
     try {
       await webdavClient.putFileContents(remotePath, file.buffer);
@@ -101,6 +116,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     // Save file metadata to MongoDB
     const fileMessage = new Message({
+      _id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, // Unique id for message
       room,
       user: username.toLowerCase(),
       text: `📎 Shared a file: ${fileUrl}`,
