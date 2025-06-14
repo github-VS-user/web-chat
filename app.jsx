@@ -304,16 +304,16 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
-      <header className="bg-blue-600 text-white p-4 flex items-center justify-between text-xl">
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden sm:overflow-auto">
+      <header className="bg-blue-600 text-white p-4 flex flex-wrap items-center justify-between text-xl gap-2">
         <div className="flex-1">Web Chat</div>
 
-        <div className="flex-1 text-center bg-blue-800 px-3 py-1 rounded text-sm select-none">
+        <div className="flex-1 text-center bg-blue-800 px-3 py-1 rounded text-sm select-none truncate">
           Room: <span className="font-semibold">{room}</span>
         </div>
 
         <div className="flex-1 flex justify-end">
-          <div className="bg-white rounded-full px-3 py-1 flex items-center space-x-2 shadow-lg text-gray-800 text-sm font-medium">
+          <div className="bg-white rounded-full px-3 py-1 flex items-center space-x-2 shadow-lg text-gray-800 text-sm font-medium max-w-[120px] sm:max-w-none">
             <span className="w-3 h-3 bg-green-500 rounded-full animate-ping-slow"></span>
             <span>{onlineUsers.length} online</span>
           </div>
@@ -322,7 +322,7 @@ function App() {
 
       <div className="px-4 mt-2">
         <button
-          className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-full text-sm"
+          className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-full text-sm sm:text-base"
           onClick={() => {
             setShowRoomModal(true);
             setRoomMode('');
@@ -346,16 +346,16 @@ function App() {
         </button>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 max-w-screen-sm mx-auto">
         {messages.map(msg => (
           <div
             key={msg.id}
             className={`p-2 rounded max-w-xs break-words ${
               msg.user === username
-                ? 'bg-blue-200 self-end text-right'
+                ? 'bg-blue-200 self-start text-left'
                 : msg.user === 'System'
                 ? 'bg-gray-200 italic text-gray-600 text-center'
-                : 'bg-white'
+                : 'bg-white self-end text-right'
             }`}
           >
             {msg.user !== 'System' && (
@@ -374,7 +374,7 @@ function App() {
           value={message}
           onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          className={`flex-1 border rounded p-2 ${
+          className={`flex-1 border rounded p-2 min-w-0 ${
             commandValid === false || targetValid === false
               ? 'border-red-500'
               : commandValid === true || targetValid === true
@@ -388,7 +388,7 @@ function App() {
           <>
             <label
               htmlFor="file-upload"
-              className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm select-none"
+              className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm sm:text-base select-none"
               title="Upload File"
               aria-label="Upload File"
             >
@@ -453,7 +453,7 @@ function App() {
         )}
         <button
           onClick={handleSend}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-500 text-white px-4 py-2 rounded text-sm sm:text-base"
         >
           Send
         </button>
@@ -468,8 +468,8 @@ function App() {
               <>
                 <h2 id="modal-title" className="text-lg font-semibold mb-4">Create or Join a Group</h2>
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => setRoomMode('join')} aria-label="Join Group" className="bg-blue-500 text-white px-4 py-2 rounded">Join Group</button>
-                  <button onClick={() => setRoomMode('create')} aria-label="Create Group" className="bg-green-500 text-white px-4 py-2 rounded">Create Group</button>
+                  <button onClick={() => setRoomMode('join')} aria-label="Join Group" className="bg-blue-500 text-white px-4 py-2 rounded text-sm sm:text-base">Join Group</button>
+                  <button onClick={() => setRoomMode('create')} aria-label="Create Group" className="bg-green-500 text-white px-4 py-2 rounded text-sm sm:text-base">Create Group</button>
                   <button onClick={() => setShowRoomModal(false)} aria-label="Cancel" className="mt-2 text-sm text-gray-500 underline">Cancel</button>
                 </div>
               </>
@@ -497,7 +497,7 @@ function App() {
                         }
                         socket.emit('create room', { username, room: trimmedRoom });
                       }}
-                      className="bg-green-600 text-white px-4 py-2 rounded"
+                      className="bg-green-600 text-white px-4 py-2 rounded text-sm sm:text-base"
                     >
                       Create
                     </button>
@@ -511,7 +511,7 @@ function App() {
                         }
                         socket.emit('join room', { username, room: trimmedRoom });
                       }}
-                      className="bg-blue-600 text-white px-4 py-2 rounded"
+                      className="bg-blue-600 text-white px-4 py-2 rounded text-sm sm:text-base"
                     >
                       Join
                     </button>
