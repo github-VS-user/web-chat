@@ -314,57 +314,6 @@ function App() {
         >
           Create or Join Group
         </button>
-        <form
-          className="mt-2"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const fileInput = document.getElementById('file-upload');
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('username', username);
-            formData.append('room', room);
-
-            try {
-              const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData,
-              });
-
-              const data = await response.json();
-              if (data.success) {
-                socket.emit('chat message', {
-                  id: uuidv4(),
-                  user: username,
-                  text: `📎 Shared a file: ${data.fileUrl}`,
-                  room,
-                });
-              } else {
-                alert('Upload failed: ' + data.error);
-              }
-            } catch (err) {
-              alert('Error uploading file.');
-              console.error(err);
-            }
-
-            fileInput.value = ''; // reset file input
-          }}
-        >
-          <input
-            id="file-upload"
-            type="file"
-            accept=".pdf,.jpg,.png,.txt,.zip,.mp4,.docx"
-            className="text-sm"
-          />
-          <button
-            type="submit"
-            className="ml-2 bg-green-600 text-white px-3 py-1 rounded text-sm"
-          >
-            Upload File
-          </button>
-        </form>
       </div>
 
       {room !== 'general' && (
@@ -402,12 +351,12 @@ function App() {
         )}
         <div id="chat-end" />
       </div>
-      <footer className="p-4 flex bg-white border-t">
+      <footer className="p-4 flex bg-white border-t items-center space-x-2">
         <input
           value={message}
           onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          className={`flex-1 border rounded p-2 mr-2 ${
+          className={`flex-1 border rounded p-2 ${
             commandValid === false || targetValid === false
               ? 'border-red-500'
               : commandValid === true || targetValid === true
@@ -417,12 +366,60 @@ function App() {
           placeholder="Type a message..."
           aria-label="Type your message"
         />
-        {commandValid === false && (
-          <p className="text-red-600 text-xs mt-1">Invalid command.</p>
-        )}
-        {commandValid === true && targetValid === false && (
-          <p className="text-red-600 text-xs mt-1">Invalid target username.</p>
-        )}
+        <label
+          htmlFor="file-upload"
+          className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm select-none"
+          title="Upload File"
+          aria-label="Upload File"
+        >
+          📎
+        </label>
+        <input
+          id="file-upload"
+          type="file"
+          accept=".pdf,.jpg,.png,.txt,.zip,.mp4,.docx"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 20 * 1024 * 1024) { // 20 MB limit
+              alert('File size exceeds 20 MB limit.');
+              e.target.value = '';
+              return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('username', username);
+            formData.append('room', room);
+
+            try {
+              const response = await fetch('https://server.master3d.net/upload', {
+                method: 'POST',
+                body: formData,
+              });
+
+              const data = await response.json();
+              if (data.success) {
+                socket.emit('chat message', {
+                  id: uuidv4(),
+                  user: username,
+                  text: `📎 Shared a file: ${data.fileUrl}`,
+                  room,
+                });
+                alert('File uploaded successfully!');
+              } else {
+                alert('Upload failed: ' + data.error);
+              }
+            } catch (err) {
+              alert('Error uploading file.');
+              console.error(err);
+            }
+
+            e.target.value = ''; // reset file input
+          }}
+        />
         <button
           onClick={handleSend}
           className="bg-blue-500 text-white px-4 py-2 rounded"

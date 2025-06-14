@@ -83,12 +83,27 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const remotePath = path.posix.join('/rooms', room, `${Date.now()}_${file.originalname}`);
+    const remotePath = path.posix.join('rooms', room, `${Date.now()}_${file.originalname}`);
+
     await webdavClient.putFileContents(remotePath, file.buffer);
 
-    const fileUrl = `https://webdav.icedrive.net/remote.php/dav/files/yourusername${remotePath}`;
+    const fileUrl = `https://webdav.icedrive.io/remote.php/dav/files/${process.env.ICEDRIVE_EMAIL}/${remotePath}`;
 
-    // TODO: Save file metadata to MongoDB
+    // Save file metadata to MongoDB
+    const fileMessage = new Message({
+      room,
+      user: username.toLowerCase(),
+      text: `📎 Shared a file: ${fileUrl}`,
+    });
+
+    await fileMessage.save();
+
+    // Emit to room about the file upload
+    io.to(room).emit('chat message', {
+      room,
+      user: username.toLowerCase(),
+      text: `📎 Shared a file: ${fileUrl}`,
+    });
 
     res.json({ success: true, fileUrl });
   } catch (error) {
