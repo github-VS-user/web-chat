@@ -322,10 +322,6 @@ function App() {
         </button>
       )}
 
-      <div className="fixed top-4 right-4 bg-white rounded-full px-3 py-1 flex items-center space-x-2 shadow-lg">
-        <span className="w-3 h-3 bg-green-500 rounded-full animate-ping-slow"></span>
-        <span className="text-sm font-medium text-gray-800">{onlineUsers.length} online</span>
-      </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.map(msg => (
           <div
