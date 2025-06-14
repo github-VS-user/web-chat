@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import socket from './socket';
 import { v4 as uuidv4 } from 'uuid';
+import Filter from 'bad-words';
+const filter = new Filter();
 
 function App() {
   const [username, setUsername] = useState('');
@@ -213,10 +215,12 @@ function App() {
         username,
       });
     } else {
+      const cleanedMessage = filter.clean(message);
+
       const msgData = {
         id: uuidv4(),
         user: username,
-        text: message,
+        text: cleanedMessage,
       };
       socket.emit('chat message', { ...msgData, room });
     }
