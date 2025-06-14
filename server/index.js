@@ -9,6 +9,12 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
 }).then(() => {
   console.log('Connected to MongoDB');
+  Room.find().then(docs => {
+    docs.forEach(doc => rooms.add(doc.name));
+    console.log(`Restored ${docs.length} room(s) from MongoDB`);
+  }).catch(err => {
+    console.error('Failed to restore rooms:', err);
+  });
 }).catch((err) => {
   console.error('MongoDB connection error:', err);
 });
@@ -22,6 +28,12 @@ const messageSchema = new mongoose.Schema({
 });
 
 const Message = mongoose.model('Message', messageSchema);
+
+const roomSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
+});
+const Room = mongoose.model('Room', roomSchema);
 
 import express from 'express';
 import http from 'http';
@@ -156,6 +168,11 @@ io.on('connection', (socket) => {
     });
 
     rooms.add(room);
+    Room.create({ name: room }).then(() => {
+      console.log(`Room "${room}" saved to MongoDB`);
+    }).catch(err => {
+      console.error('Failed to save room:', err);
+    });
     socket.join(room);
     socket.emit('joined room', room);
     socket.data.username = username;
