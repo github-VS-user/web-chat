@@ -346,7 +346,7 @@ function App() {
         </button>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 max-w-screen-sm mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 w-full px-4">
         {messages.map(msg => (
           <div
             key={msg.id}
@@ -528,3 +528,5 @@ function App() {
 }
 
 export default App;
+
+ 
