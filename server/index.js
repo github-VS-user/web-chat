@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 const messageSchema = new mongoose.Schema({
-  _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+  _id: { type: String, required: true },
   room: String,
   user: String,
   text: String,
@@ -55,7 +55,7 @@ const io = new Server(server, {
 app.use(cors());
 
 const webdavClient = createClient(
-  "https://webdav.icedrive.net/",
+  "https://webdav.icedrive.io/",
   {
     username: process.env.ICEDRIVE_EMAIL,
     password: process.env.ICEDRIVE_KEY,
@@ -89,7 +89,13 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     const remotePath = path.posix.join('rooms', room, `${Date.now()}_${file.originalname}`);
 
-    await webdavClient.putFileContents(remotePath, file.buffer);
+    try {
+      await webdavClient.putFileContents(remotePath, file.buffer);
+      console.log(`File uploaded to WebDAV at path: ${remotePath}`);
+    } catch (uploadError) {
+      console.error('WebDAV upload failed:', uploadError);
+      return res.status(500).json({ error: 'WebDAV upload failed' });
+    }
 
     const fileUrl = `https://webdav.icedrive.io/remote.php/dav/files/${process.env.ICEDRIVE_EMAIL}/${remotePath}`;
 
@@ -300,7 +306,7 @@ io.on('connection', (socket) => {
     if (room === 'general') {
       console.log('Skipping saving message from general room.');
     } else {
-      const messageDoc = new Message({ room, user, text });
+      const messageDoc = new Message({ _id: msg.id, room, user, text });
       messageDoc.save()
         .then(() => console.log('Message saved to MongoDB'))
         .catch(err => console.error('Failed to save message:', err));

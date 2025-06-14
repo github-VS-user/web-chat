@@ -13,6 +13,10 @@ function App() {
   const typingTimeoutRef = useRef(null);
 
   const [room, setRoom] = useState('general');
+  const roomRef = useRef(room);
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [roomMode, setRoomMode] = useState('');
   const [roomInput, setRoomInput] = useState('');
@@ -83,9 +87,9 @@ function App() {
   // Register socket event listeners once
   useEffect(() => {
     socket.on('chat message', (msg) => {
-      if (msg.room === room) {
+      if (msg.room === roomRef.current) {
         setMessages(prev => [...prev, msg]);
-        if (room === 'general') {
+        if (roomRef.current === 'general') {
           setTimeout(() => {
             setMessages(prev => prev.filter(m => m.id !== msg.id));
           }, 10000);
@@ -96,7 +100,7 @@ function App() {
     });
 
     socket.on('chat history', (history) => {
-      if (history.length > 0 && history[0].room === room) {
+      if (history.length > 0 && history[0].room === roomRef.current) {
         setMessages(history);
       }
     });
@@ -110,11 +114,25 @@ function App() {
     });
 
     socket.on('user joined', (user) => {
-      setMessages(prev => [...prev, { id: Date.now(), user: 'System', text: `${user} joined the chat` }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          user: 'System',
+          text: `${user} joined the chat`
+        }
+      ]);
     });
 
     socket.on('user left', (user) => {
-      setMessages(prev => [...prev, { id: Date.now(), user: 'System', text: `${user} left the chat` }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          user: 'System',
+          text: `${user} left the chat`
+        }
+      ]);
     });
 
     socket.on('online users', (userList) => {
@@ -419,7 +437,7 @@ function App() {
                       text: `📎 Shared a file: ${data.fileUrl}`,
                       room,
                     });
-                    alert('File uploaded successfully!');
+                    console.log('File uploaded successfully!');
                   } else {
                     alert('Upload failed: ' + data.error);
                   }
@@ -470,13 +488,14 @@ function App() {
                   {roomMode === 'create' ? (
                     <button
                       onClick={() => {
-                        console.log('Creating room with:', { username, room: roomInput });
+                        const trimmedRoom = roomInput.trim();
+                        console.log('Creating room with:', { username, room: trimmedRoom });
                         if (!socket.connected) {
                           console.log('Socket not connected yet, please wait...');
                           setRoomError('Connection not ready. Please try again.');
                           return;
                         }
-                        socket.emit('create room', { username, room: roomInput });
+                        socket.emit('create room', { username, room: trimmedRoom });
                       }}
                       className="bg-green-600 text-white px-4 py-2 rounded"
                     >
@@ -485,11 +504,12 @@ function App() {
                   ) : (
                     <button
                       onClick={() => {
-                        if (!isValidRoomName(roomInput)) {
+                        const trimmedRoom = roomInput.trim();
+                        if (!isValidRoomName(trimmedRoom)) {
                           setRoomError('Invalid name: 3-8 letters/numbers only.');
                           return;
                         }
-                        socket.emit('join room', { username, room: roomInput });
+                        socket.emit('join room', { username, room: trimmedRoom });
                       }}
                       className="bg-blue-600 text-white px-4 py-2 rounded"
                     >
