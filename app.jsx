@@ -352,10 +352,10 @@ function App() {
             key={msg.id}
             className={`p-2 rounded max-w-xs break-words ${
               msg.user === username
-                ? 'bg-blue-200 self-start text-left'
+                ? 'bg-blue-200 self-end text-right'
                 : msg.user === 'System'
                 ? 'bg-gray-200 italic text-gray-600 text-center'
-                : 'bg-white self-end text-right'
+                : 'bg-white self-start text-left'
             }`}
           >
             {msg.user !== 'System' && (
