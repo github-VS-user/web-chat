@@ -1,3 +1,6 @@
+import multer from 'multer';
+import { createClient } from 'webdav';
+import path from 'path';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -41,6 +44,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 
 const app = express();
+const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } }); // 20MB max
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -50,6 +54,14 @@ const io = new Server(server, {
 
 app.use(cors());
 
+const webdavClient = createClient(
+  "https://webdav.icedrive.net/",
+  {
+    username: process.env.ICEDRIVE_EMAIL,
+    password: process.env.ICEDRIVE_KEY,
+  }
+);
+
 app.get('/', (req, res) => {
   res.send('Server is awake!');
 });
@@ -58,6 +70,32 @@ app.get('/', (req, res) => {
 const usersPerRoom = new Map();
 const connectedSockets = new Set();
 const kickedUsers = new Set();
+
+app.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    const { username, room } = req.body;
+    if (!username || !room || room === 'general') {
+      return res.status(400).json({ error: 'Invalid upload parameters' });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const remotePath = path.posix.join('/rooms', room, `${Date.now()}_${file.originalname}`);
+    await webdavClient.putFileContents(remotePath, file.buffer);
+
+    const fileUrl = `https://webdav.icedrive.net/remote.php/dav/files/yourusername${remotePath}`;
+
+    // TODO: Save file metadata to MongoDB
+
+    res.json({ success: true, fileUrl });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
 
 io.on('connection', (socket) => {
   console.log(`User connected: socket id = ${socket.id}`);

@@ -314,6 +314,57 @@ function App() {
         >
           Create or Join Group
         </button>
+        <form
+          className="mt-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-upload');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('username', username);
+            formData.append('room', room);
+
+            try {
+              const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData,
+              });
+
+              const data = await response.json();
+              if (data.success) {
+                socket.emit('chat message', {
+                  id: uuidv4(),
+                  user: username,
+                  text: `📎 Shared a file: ${data.fileUrl}`,
+                  room,
+                });
+              } else {
+                alert('Upload failed: ' + data.error);
+              }
+            } catch (err) {
+              alert('Error uploading file.');
+              console.error(err);
+            }
+
+            fileInput.value = ''; // reset file input
+          }}
+        >
+          <input
+            id="file-upload"
+            type="file"
+            accept=".pdf,.jpg,.png,.txt,.zip,.mp4,.docx"
+            className="text-sm"
+          />
+          <button
+            type="submit"
+            className="ml-2 bg-green-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Upload File
+          </button>
+        </form>
       </div>
 
       {room !== 'general' && (
