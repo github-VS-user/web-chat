@@ -69,9 +69,8 @@ io.on('connection', (socket) => {
     console.log(`Received event: "${event}" with args:`, args);
   });
 
-  // Join general room by default
-  socket.join('general');
-  console.log(`Socket ${socket.id} joined room "general"`);
+  // Do NOT join general room by default.
+  // Require client to emit 'join room' or 'create room' with username and room.
 
   // Helper to update user lists for all rooms this socket is in
   const updateUsersCountForRooms = () => {
@@ -81,8 +80,11 @@ io.on('connection', (socket) => {
       let usersInRoom = [];
       if (clients) {
         usersInRoom = Array.from(clients)
-          .map(socketId => io.sockets.sockets.get(socketId)?.data?.username)
-          .filter(Boolean);
+          .map(socketId => {
+            const s = io.sockets.sockets.get(socketId);
+            return s?.data?.username;
+          })
+          .filter(Boolean); // only sockets with assigned usernames
       }
       usersPerRoom.set(room, usersInRoom.length);
       io.to(room).emit('online users', usersInRoom);
@@ -91,8 +93,7 @@ io.on('connection', (socket) => {
   };
 
 
-  // Update counts for initial rooms
-  updateUsersCountForRooms();
+  // No updateUsersCountForRooms here; user must join a room first.
 
   socket.on('test-event', (data) => {
     console.log(`Received test-event from ${socket.id} with data:`, data);

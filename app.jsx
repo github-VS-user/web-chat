@@ -49,8 +49,10 @@ function App() {
   useEffect(() => {
     const savedName = localStorage.getItem('username');
     if (savedName) {
-      setUsername(savedName.toLowerCase());
+      const lowerName = savedName.toLowerCase();
+      setUsername(lowerName);
       setConnected(true);
+      socket.emit('join room', { username: lowerName, room: 'general' });
     }
   }, []);
 
@@ -228,8 +230,9 @@ function App() {
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
+      setTypingUser('');
       socket.emit('user stop typing');
-    }, 1000);
+    }, 1500); // increased delay for smoother UX
   };
 
   console.log('Online users count at render:', onlineUsers.length);
@@ -363,6 +366,12 @@ function App() {
           placeholder="Type a message..."
           aria-label="Type your message"
         />
+        {commandValid === false && (
+          <p className="text-red-600 text-xs mt-1">Invalid command.</p>
+        )}
+        {commandValid === true && targetValid === false && (
+          <p className="text-red-600 text-xs mt-1">Invalid target username.</p>
+        )}
         <button
           onClick={handleSend}
           className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -371,20 +380,23 @@ function App() {
         </button>
       </footer>
       {showRoomModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          role="dialog" aria-modal="true" aria-labelledby="modal-title"
+        >
           <div className="bg-white p-6 rounded shadow-md w-80">
             {!roomMode ? (
               <>
-                <h2 className="text-lg font-semibold mb-4">Create or Join a Group</h2>
+                <h2 id="modal-title" className="text-lg font-semibold mb-4">Create or Join a Group</h2>
                 <div className="flex flex-col gap-2">
-                  <button onClick={() => setRoomMode('join')} className="bg-blue-500 text-white px-4 py-2 rounded">Join Group</button>
-                  <button onClick={() => setRoomMode('create')} className="bg-green-500 text-white px-4 py-2 rounded">Create Group</button>
-                  <button onClick={() => setShowRoomModal(false)} className="mt-2 text-sm text-gray-500 underline">Cancel</button>
+                  <button onClick={() => setRoomMode('join')} aria-label="Join Group" className="bg-blue-500 text-white px-4 py-2 rounded">Join Group</button>
+                  <button onClick={() => setRoomMode('create')} aria-label="Create Group" className="bg-green-500 text-white px-4 py-2 rounded">Create Group</button>
+                  <button onClick={() => setShowRoomModal(false)} aria-label="Cancel" className="mt-2 text-sm text-gray-500 underline">Cancel</button>
                 </div>
               </>
             ) : (
               <>
-                <h2 className="text-lg font-semibold mb-4">{roomMode === 'create' ? 'Create' : 'Join'} a Group</h2>
+                <h2 id="modal-title" className="text-lg font-semibold mb-4">{roomMode === 'create' ? 'Create' : 'Join'} a Group</h2>
                 <input
                   type="text"
                   value={roomInput}
@@ -423,7 +435,7 @@ function App() {
                       Join
                     </button>
                   )}
-                  <button onClick={() => setShowRoomModal(false)} className="text-sm text-gray-500 underline">Cancel</button>
+                  <button onClick={() => setShowRoomModal(false)} aria-label="Cancel" className="text-sm text-gray-500 underline">Cancel</button>
                 </div>
               </>
             )}
