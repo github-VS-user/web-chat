@@ -366,69 +366,73 @@ function App() {
           placeholder="Type a message..."
           aria-label="Type your message"
         />
-        <label
-          htmlFor="file-upload"
-          className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm select-none"
-          title="Upload File"
-          aria-label="Upload File"
-        >
-          📎
-        </label>
-        <input
-          id="file-upload"
-          type="file"
-          accept=".pdf,.jpg,.png,.txt,.zip,.mp4,.docx"
-          className="hidden"
-          onChange={async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        {room !== 'general' && (
+          <>
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm select-none"
+              title="Upload File"
+              aria-label="Upload File"
+            >
+              📎
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              accept=".pdf,.jpg,.png,.txt,.zip,.mp4,.docx"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            if (file.size > 20 * 1024 * 1024) { // 20 MB limit
-              alert('File size exceeds 20 MB limit.');
-              e.target.value = '';
-              return;
-            }
+                if (file.size > 20 * 1024 * 1024) { // 20 MB limit
+                  alert('File size exceeds 20 MB limit.');
+                  e.target.value = '';
+                  return;
+                }
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('username', username);
-            formData.append('room', room);
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('username', username);
+                formData.append('room', room);
 
-            try {
-              const response = await fetch('https://server.master3d.net/upload', {
-                method: 'POST',
-                body: formData,
-              });
+                try {
+                  const response = await fetch('https://server.master3d.net/upload', {
+                    method: 'POST',
+                    body: formData,
+                  });
 
-              if (!response.ok) {
-                throw new Error(`Server responded with status ${response.status}`);
-              }
-              let data;
-              try {
-                data = await response.json();
-              } catch (jsonErr) {
-                throw new Error('Failed to parse server response as JSON.');
-              }
-              console.log('[upload response]', data);
-              if (data.success) {
-                socket.emit('chat message', {
-                  id: uuidv4(),
-                  user: username,
-                  text: `📎 Shared a file: ${data.fileUrl}`,
-                  room,
-                });
-                alert('File uploaded successfully!');
-              } else {
-                alert('Upload failed: ' + data.error);
-              }
-            } catch (err) {
-              alert('Error uploading file.');
-              console.error(err);
-            }
+                  if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                  }
+                  let data;
+                  try {
+                    data = await response.json();
+                  } catch (jsonErr) {
+                    throw new Error('Failed to parse server response as JSON.');
+                  }
+                  console.log('[upload response]', data);
+                  if (data.success) {
+                    socket.emit('chat message', {
+                      id: uuidv4(),
+                      user: username,
+                      text: `📎 Shared a file: ${data.fileUrl}`,
+                      room,
+                    });
+                    alert('File uploaded successfully!');
+                  } else {
+                    alert('Upload failed: ' + data.error);
+                  }
+                } catch (err) {
+                  alert('Error uploading file.');
+                  console.error(err);
+                }
 
-            e.target.value = ''; // reset file input
-          }}
-        />
+                e.target.value = ''; // reset file input
+              }}
+            />
+          </>
+        )}
         <button
           onClick={handleSend}
           className="bg-blue-500 text-white px-4 py-2 rounded"
