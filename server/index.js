@@ -72,6 +72,10 @@ const connectedSockets = new Set();
 const kickedUsers = new Set();
 
 app.post('/upload', upload.single('file'), async (req, res) => {
+  console.log('UPLOAD DEBUG:', {
+    body: req.body,
+    hasFile: !!req.file
+  });
   try {
     const { username, room } = req.body;
     if (!username || !room || room === 'general') {

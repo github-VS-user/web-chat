@@ -400,7 +400,16 @@ function App() {
                 body: formData,
               });
 
-              const data = await response.json();
+              if (!response.ok) {
+                throw new Error(`Server responded with status ${response.status}`);
+              }
+              let data;
+              try {
+                data = await response.json();
+              } catch (jsonErr) {
+                throw new Error('Failed to parse server response as JSON.');
+              }
+              console.log('[upload response]', data);
               if (data.success) {
                 socket.emit('chat message', {
                   id: uuidv4(),
