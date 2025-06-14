@@ -193,7 +193,8 @@ io.on('connection', (socket) => {
           if ((s.data?.username || '').toLowerCase() === target) {
             s.emit('kicked');
             s.leave(room);
-            console.log(`User "${target}" was kicked from room "${room}".`);
+            s.disconnect(true);
+            console.log(`User "${target}" was kicked from room "${room}" and disconnected.`);
           }
         }
       }

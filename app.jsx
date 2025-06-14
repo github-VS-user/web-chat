@@ -9,7 +9,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [wakingUp, setWakingUp] = useState(true);
   const [typingUser, setTypingUser] = useState('');
-  const [onlineCount, setOnlineCount] = useState(0);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const typingTimeoutRef = useRef(null);
 
   const [room, setRoom] = useState('general');
@@ -19,6 +19,9 @@ function App() {
   const [roomError, setRoomError] = useState('');
   // New kicked state
   const [kicked, setKicked] = useState(false);
+
+  const [commandValid, setCommandValid] = useState(null);
+  const [targetValid, setTargetValid] = useState(null);
 
   const isValidRoomName = (name) => /^[a-zA-Z0-9]{3,8}$/.test(name);
 
@@ -112,8 +115,8 @@ function App() {
       setMessages(prev => [...prev, { id: Date.now(), user: 'System', text: `${user} left the chat` }]);
     });
 
-    socket.on('online users', (count) => {
-      setOnlineCount(count);
+    socket.on('online users', (userList) => {
+      setOnlineUsers(userList); // expects an array of usernames
     });
 
     socket.on('room created', (roomName) => {
@@ -203,6 +206,25 @@ function App() {
   const handleTyping = (text) => {
     setMessage(text);
     socket.emit('user typing', username);
+
+    if (text.startsWith('/')) {
+      const parts = text.trim().split(' ');
+      const base = parts[0];
+      const target = parts[1]?.toLowerCase();
+
+      const validCommands = ['/clear', '/kick', '/unkick'];
+      setCommandValid(validCommands.includes(base));
+
+      if (base === '/kick' && target) {
+        setTargetValid(onlineUsers.includes(target));
+      } else {
+        setTargetValid(null);
+      }
+    } else {
+      setCommandValid(null);
+      setTargetValid(null);
+    }
+
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('user stop typing');
@@ -269,7 +291,7 @@ function App() {
         <div className="flex-1 flex justify-end">
           <div className="bg-white rounded-full px-3 py-1 flex items-center space-x-2 shadow-lg text-gray-800 text-sm font-medium">
             <span className="w-3 h-3 bg-green-500 rounded-full animate-ping-slow"></span>
-            <span>{onlineCount} online</span>
+            <span>{onlineUsers.length} online</span>
           </div>
         </div>
       </header>
@@ -302,7 +324,7 @@ function App() {
 
       <div className="fixed top-4 right-4 bg-white rounded-full px-3 py-1 flex items-center space-x-2 shadow-lg">
         <span className="w-3 h-3 bg-green-500 rounded-full animate-ping-slow"></span>
-        <span className="text-sm font-medium text-gray-800">{onlineCount} online</span>
+        <span className="text-sm font-medium text-gray-800">{onlineUsers.length} online</span>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.map(msg => (
@@ -332,7 +354,13 @@ function App() {
           value={message}
           onChange={(e) => handleTyping(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          className="flex-1 border rounded p-2 mr-2"
+          className={`flex-1 border rounded p-2 mr-2 ${
+            commandValid === false || targetValid === false
+              ? 'border-red-500'
+              : commandValid === true || targetValid === true
+              ? 'border-green-500'
+              : ''
+          }`}
           placeholder="Type a message..."
           aria-label="Type your message"
         />
