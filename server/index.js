@@ -73,16 +73,20 @@ io.on('connection', (socket) => {
   socket.join('general');
   console.log(`Socket ${socket.id} joined room "general"`);
 
-  // Helper to update user counts for all rooms this socket is in
+  // Helper to update user lists for all rooms this socket is in
   const updateUsersCountForRooms = () => {
     socket.rooms.forEach(room => {
       if (room === socket.id) return; // skip socket's private room
-      // Count how many connected sockets are in this room
       const clients = io.sockets.adapter.rooms.get(room);
-      const count = clients ? clients.size : 0;
-      usersPerRoom.set(room, count);
-      io.to(room).emit('online users', count);
-      console.log(`Online users in "${room}" updated to ${count}`);
+      let usersInRoom = [];
+      if (clients) {
+        usersInRoom = Array.from(clients)
+          .map(socketId => io.sockets.sockets.get(socketId)?.data?.username)
+          .filter(Boolean);
+      }
+      usersPerRoom.set(room, usersInRoom.length);
+      io.to(room).emit('online users', usersInRoom);
+      console.log(`Online users in "${room}" updated to ${usersInRoom.length}`);
     });
   };
 
