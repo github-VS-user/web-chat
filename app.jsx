@@ -29,6 +29,11 @@ function App() {
   const [commandValid, setCommandValid] = useState(null);
   const [targetValid, setTargetValid] = useState(null);
 
+  // Info popup state
+  const [showInfoPopup, setShowInfoPopup] = useState(() => {
+    return !localStorage.getItem('infoPopupShown');
+  });
+
   const isValidRoomName = (name) => /^[a-zA-Z0-9]{3,8}$/.test(name);
 
   useEffect(() => {
@@ -307,6 +312,12 @@ function App() {
     );
   }
 
+  useEffect(() => {
+    if (showInfoPopup) {
+      localStorage.setItem('infoPopupShown', 'true');
+    }
+  }, [showInfoPopup]);
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden sm:overflow-auto">
       <header className="bg-blue-600 text-white p-4 flex flex-wrap items-center justify-between text-xl gap-2">
@@ -524,6 +535,25 @@ function App() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {showInfoPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-md w-96 max-w-full text-sm text-gray-800 space-y-4">
+            <h2 className="text-lg font-semibold">ℹ️ Welcome to the Chat</h2>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>File upload may not work depending on server status.</li>
+              <li>The command <code className="bg-gray-200 px-1 rounded">/clear</code> clears all messages in a group.</li>
+              <li>Messages in groups are saved and persistent.</li>
+              <li>You can add up to <strong>25 users per group</strong>.</li>
+            </ul>
+            <button
+              onClick={() => setShowInfoPopup(false)}
+              className="bg-blue-600 text-white px-4 py-2 rounded text-sm"
+            >
+              Got it!
+            </button>
           </div>
         </div>
       )}
