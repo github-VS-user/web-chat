@@ -10,23 +10,23 @@ export default function ChatWindow({ messages = [], typingUser, username }) {
   }, [messages, typingUser]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 w-full px-6 bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 overflow-y-auto p-4 space-y-2 w-full px-4 bg-chat-bg">
       {messages.map(msg => (
         <div
           key={msg.id}
           className={`flex ${msg.user === username ? 'justify-end' : 'justify-start'}`}
         >
           <div
-            className={`relative p-3 max-w-xs break-words
-              ${msg.user === username
-                ? 'bg-blue-500 text-white rounded-tr-2xl rounded-br-2xl rounded-tl-xl shadow-lg'
+            className={`chat-bubble ${
+              msg.user === username
+                ? 'chat-bubble-self'
                 : msg.user === 'System'
-                ? 'bg-gray-300 italic text-gray-700 text-center mx-auto rounded-xl'
-                : 'bg-white text-gray-900 rounded-tl-2xl rounded-bl-2xl rounded-tr-xl shadow-md'}
-            `}
+                ? 'chat-bubble-system'
+                : 'chat-bubble-other'
+            }`}
           >
             {msg.user !== 'System' && (
-              <span className="font-semibold">{msg.user}: </span>
+              <span className="font-bold">{msg.user}: </span>
             )}
             {msg.text}
           </div>
