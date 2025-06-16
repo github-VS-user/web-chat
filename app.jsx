@@ -3,7 +3,7 @@ import socket from './socket';
 import { v4 as uuidv4 } from 'uuid';
 import { Filter } from 'bad-words';
 const filter = new Filter();
-import Header from './components/Header.jsx';
+import Header from './components/header.jsx';
 import ChatWindow from './components/ChatWindow.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 
@@ -23,7 +23,7 @@ function App() {
     if (wakingUp) {
       const timer = setTimeout(() => {
         setTimeoutReached(true);
-      }, 25000); // 25 seconds
+      }, 20000); // 25 seconds
 
       return () => clearTimeout(timer);
     } else {
