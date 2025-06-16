@@ -51,12 +51,18 @@ function App() {
 
   useEffect(() => {
     const savedName = localStorage.getItem('username');
-    if (savedName) {
-      const lowerName = savedName.toLowerCase();
-      setUsername(lowerName);
-      setConnected(true);
-      socket.emit('join room', { username: lowerName, room: 'general' });
-    }
+    const lowerName = savedName?.toLowerCase();
+
+    const handleConnect = () => {
+      if (lowerName) {
+        setUsername(lowerName);
+        setConnected(true);
+        socket.emit('join room', { username: lowerName, room: 'general' });
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    return () => socket.off('connect', handleConnect);
   }, []);
 
   useEffect(() => {
@@ -277,7 +283,7 @@ function App() {
           <input
             type="text"
             className="border p-2 w-full mb-4"
-            onChange={(e) => setUsername(e.target.value.toLowerCase())}
+            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
             value={username}
             aria-label="Enter username"
           />
