@@ -5,6 +5,8 @@ import { Filter } from 'bad-words';
 const filter = new Filter();
 
 function App() {
+  const [showSettings, setShowSettings] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [username, setUsername] = useState('');
   const [connected, setConnected] = useState(false);
   const [message, setMessage] = useState('');
@@ -303,7 +305,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden sm:overflow-auto">
+    <div className={`h-screen flex flex-col overflow-hidden sm:overflow-auto ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
       <header className="bg-blue-600 text-white p-4 flex flex-wrap items-center justify-between text-xl gap-2">
         <div className="flex-1">Web Chat</div>
 
@@ -318,6 +320,16 @@ function App() {
           </div>
         </div>
       </header>
+
+      <div className="w-full text-right pr-4 mt-1">
+        <button
+          onClick={() => setShowSettings(true)}
+          className="text-gray-700 hover:text-gray-900 text-xl"
+          aria-label="Settings"
+        >
+          ⚙️
+        </button>
+      </div>
 
       <div className="px-4 mt-2">
         <button
@@ -519,6 +531,60 @@ function App() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-md w-80 text-gray-800 dark:text-white">
+            <h2 className="text-lg font-semibold mb-4">Settings</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Change Username</label>
+                <input
+                  type="text"
+                  className="border p-2 w-full text-black"
+                  value={username}
+                  onChange={(e) => {
+                    const clean = e.target.value.toLowerCase().replace(/\s/g, '');
+                    setUsername(clean);
+                    localStorage.setItem('username', clean);
+                  }}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="darkMode"
+                  checked={darkMode}
+                  onChange={() => setDarkMode(!darkMode)}
+                />
+                <label htmlFor="darkMode">Dark Mode</label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Rooms Joined</label>
+                <ul className="list-disc list-inside text-sm">
+                  {[...new Set([room, ...Object.keys(localStorage).filter(k => k.startsWith('joined_room_')).map(k => localStorage.getItem(k))])]
+                    .filter(Boolean)
+                    .map((r, idx) => (
+                      <li key={idx}>{r}</li>
+                    ))}
+                </ul>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total: {
+                    [...new Set([room, ...Object.keys(localStorage).filter(k => k.startsWith('joined_room_')).map(k => localStorage.getItem(k))])]
+                      .filter(Boolean)
+                      .length
+                  } room(s)
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="mt-4 text-sm text-blue-600 underline"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
