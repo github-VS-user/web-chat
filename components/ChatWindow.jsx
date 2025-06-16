@@ -14,18 +14,22 @@ export default function ChatWindow({ messages = [], typingUser, username }) {
       {messages.map(msg => (
         <div
           key={msg.id}
-          className={`p-2 rounded max-w-xs break-words ${
-            msg.user === username
-              ? 'bg-blue-200 self-end text-right'
-              : msg.user === 'System'
-              ? 'bg-gray-200 italic text-gray-600 text-center'
-              : 'bg-white self-start text-left'
-          }`}
+          className={`flex ${msg.user === username ? 'justify-end' : 'justify-start'}`}
         >
-          {msg.user !== 'System' && (
-            <span className="font-bold">{msg.user}: </span>
-          )}
-          {msg.text}
+          <div
+            className={`p-2 rounded-lg max-w-xs break-words ${
+              msg.user === username
+                ? 'bg-blue-200 text-right'
+                : msg.user === 'System'
+                ? 'bg-gray-200 italic text-gray-600 text-center mx-auto'
+                : 'bg-white text-left'
+            }`}
+          >
+            {msg.user !== 'System' && (
+              <span className="font-bold">{msg.user}: </span>
+            )}
+            {msg.text}
+          </div>
         </div>
       ))}
       {typingUser && typingUser !== username && (
