@@ -170,7 +170,7 @@ function App() {
 
     socket.on('online users', (userList) => {
       console.log('Received online users:', userList);
-      setOnlineUsers(userList);
+      setOnlineUsers(Array.isArray(userList) ? userList : []);
     });
 
     socket.on('room created', (roomName) => {
@@ -282,7 +282,7 @@ function App() {
     }, 1500);
   };
 
-  console.log('Online users count at render:', onlineUsers.length);
+  console.log('Online users count at render:', onlineUsers?.length ?? 0);
 
   if (kicked) {
     return (
