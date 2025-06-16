@@ -13,7 +13,7 @@ export default function Header({ room, onlineUsers, onSettingsClick }) {
       </div>
       <div className="flex items-center gap-3">
         <span className="text-sm flex items-center gap-1">
-          🟢 {onlineUsers.length} online
+          🟢 {onlineUsers?.length ?? 0} online
         </span>
         <button
           onClick={onSettingsClick}

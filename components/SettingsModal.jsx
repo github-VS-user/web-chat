@@ -45,9 +45,9 @@ export default function SettingsModal({
         </div>
 
         <div className="mb-4 text-black dark:text-white">
-          <p><strong>Rooms joined:</strong> {roomsJoined.length}</p>
+          <p><strong>Rooms joined:</strong> {roomsJoined?.length ?? 0}</p>
           <ul className="list-disc list-inside text-sm">
-            {roomsJoined.map((room, index) => (
+            {(roomsJoined || []).map((room, index) => (
               <li key={index}>{room}</li>
             ))}
           </ul>

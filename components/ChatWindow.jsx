@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function ChatWindow({ messages, typingUser, username }) {
+export default function ChatWindow({ messages = [], typingUser, username }) {
   const chatEndRef = useRef(null);
 
   useEffect(() => {

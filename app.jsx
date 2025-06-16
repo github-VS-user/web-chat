@@ -282,7 +282,7 @@ function App() {
     }, 1500);
   };
 
-  console.log('Online users count at render:', onlineUsers?.length ?? 0);
+console.log('Online users count at render:', Array.isArray(onlineUsers) ? onlineUsers.length : 0);
 
   if (kicked) {
     return (
@@ -563,7 +563,7 @@ function App() {
           setUsername={setUsername}
           darkMode={darkMode}
           setDarkMode={setDarkMode}
-          onlineUsers={onlineUsers}
+          onlineUsers={Array.isArray(onlineUsers) ? onlineUsers : []}
         />
       )}
     </div>
