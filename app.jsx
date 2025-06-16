@@ -3,7 +3,7 @@ import socket from './socket';
 import { v4 as uuidv4 } from 'uuid';
 import { Filter } from 'bad-words';
 const filter = new Filter();
-import Header from './components/header.jsx';
+import Header from './components/Header.jsx';
 import ChatWindow from './components/ChatWindow.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 
