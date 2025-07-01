@@ -33,8 +33,8 @@ function App() {
   const isValidRoomName = (name) => /^[a-zA-Z0-9]{3,8}$/.test(name);
 
   useEffect(() => {
-    const onConnect = () => console.log('Socket connected:', socket.id);
-    const onDisconnect = () => console.log('Socket disconnected');
+    const onConnect = () => {};
+    const onDisconnect = () => {};
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
@@ -45,11 +45,6 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    socket.onAny((event, ...args) => {
-      console.log(`Socket event received: ${event}`, args);
-    });
-  }, []);
 
   useEffect(() => {
     const savedName = localStorage.getItem('username');
@@ -141,26 +136,22 @@ function App() {
     });
 
     socket.on('online users', (userList) => {
-      console.log('Received online users:', userList);
       setOnlineUsers(userList);
     });
 
     socket.on('room created', (roomName) => {
-      console.log('[room created] joined room:', roomName);
       setRoom(roomName);
       setShowRoomModal(false);
       setRoomError('');
     });
 
     socket.on('joined room', (roomName) => {
-      console.log('[joined room] joined room:', roomName);
       setRoom(roomName);
       setShowRoomModal(false);
       setRoomError('');
     });
 
     socket.on('error message', (msg) => {
-      console.log('[error message]', msg);
       setRoomError(msg);
     });
 
@@ -254,7 +245,6 @@ function App() {
     }, 1500);
   };
 
-  console.log('Online users count at render:', onlineUsers.length);
 
   if (kicked) {
     return (
@@ -440,7 +430,6 @@ function App() {
                   } catch (jsonErr) {
                     throw new Error('Failed to parse server response as JSON.');
                   }
-                  console.log('[upload response]', data);
                   if (data.success) {
                     socket.emit('chat message', {
                       id: uuidv4(),
@@ -448,7 +437,6 @@ function App() {
                       text: `📎 Shared a file: ${data.fileUrl}`,
                       room,
                     });
-                    console.log('File uploaded successfully!');
                   } else {
                     alert('Upload failed: ' + data.error);
                   }
@@ -500,9 +488,7 @@ function App() {
                     <button
                       onClick={() => {
                         const trimmedRoom = roomInput.trim();
-                        console.log('Creating room with:', { username, room: trimmedRoom });
                         if (!socket.connected) {
-                          console.log('Socket not connected yet, please wait...');
                           setRoomError('Connection not ready. Please try again.');
                           return;
                         }

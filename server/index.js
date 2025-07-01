@@ -248,7 +248,7 @@ io.on('connection', (socket) => {
       if (r !== socket.id) {
         console.log(`[CREATE ROOM] User "${username}" leaving room "${r}"`);
         socket.leave(r);
-      }
+      }…
     });
 
     rooms.add(room);
